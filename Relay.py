@@ -52,6 +52,8 @@ try:
 		print("Channel 3:The Common Contact is access to the Normal Closed Contact!\n")
 		time.sleep(0.5)
 		
-except:
+except KeyboardInterrupt:  # When 'Ctrl+C' is pressed, the child program destroy() will be  executed.
+        # GPIO.output(RelayPin, GPIO.LOW)
+        destroy()
 	print("except")
 	GPIO.cleanup()
