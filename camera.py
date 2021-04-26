@@ -12,6 +12,7 @@ from matplotlib import pyplot as plt
 from clear_screen import clear
 import time
 
+# def cameraInitialization():
 CV_CAP_PROP_FRAME_WIDTH = 3
 CV_CAP_PROP_FRAME_HEIGHT = 4
 CV_CAP_PROP_FPS = 5
@@ -29,7 +30,7 @@ cap.set(CV_CAP_PROP_FPS, 1)
 
 frameWidth = 640
 frameHeight = 480
- 
+
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, frameWidth) #设置窗体 1920 * 1080 
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, frameHeight)
 
@@ -37,7 +38,7 @@ ratioWindowsHeight = 1
 ratioWindowsWidth = 0.6
 windowsWidth = int(frameWidth * ( 0.5 - ratioWindowsWidth / 2 )), int(frameWidth * ( 0.5 + ratioWindowsWidth / 2 ))
 windowsHeight = int(frameHeight * ( 0.5 - ratioWindowsHeight / 2 )), int(frameHeight * ( 0.5 + ratioWindowsHeight / 2 ))
-print(f"windowsSize {windowsHeight, windowsWidth}")
+# print(f"windowsSize {windowsHeight, windowsWidth}")
 
 # cap.set(cv2.CAP_PROP_FRAME_WIDTH,16 * 70) #设置窗体 1920 * 1080 
 # cap.set(cv2.CAP_PROP_FRAME_HEIGHT,9 * 70)
@@ -133,15 +134,15 @@ def ShowContours(img):
 
         print("contours",len(contours))
         for cnt in contours:
-                print(cv2.contourArea(cnt))
+                # print(cv2.contourArea(cnt))
                 if (cv2.contourArea(cnt) > 3000) and (cv2.contourArea(cnt) < 50000):
                         # draw a rectangle around the items
                         x,y,w,h = cv2.boundingRect(cnt)
                         cv2.rectangle(img, (x,y), (x+w,y+h), (0,255,0),3)
-                        print("左上角坐标x：",x)
-                        print("左上角坐标y：",y)
-                        print("矩形宽 w：",w)
-                        print("矩形高 h：",h)
+                        # print("左上角坐标x：",x)
+                        # print("左上角坐标y：",y)
+                        # print("矩形宽 w：",w)
+                        # print("矩形高 h：",h)
                         print("液体高度：",'%.4f' % CalculationHigh(h),"cm")
 
         cv2.imshow("-1", img)
@@ -152,7 +153,7 @@ def ShowContours(img):
         
          
 
-
+# cameraInitialization()
 while(1):
         ret,img = cap.read() #实时读取图像
         print(f"img shape {img.shape}")
