@@ -1,59 +1,30 @@
-##################################################
-
-#           P26 ----> Relay_Ch1
-#			P20 ----> Relay_Ch2
-#			P21 ----> Relay_Ch3
-
-##################################################
-#!/usr/bin/python
-# -*- coding:utf-8 -*-
+#!/usr/bin/env python
 import RPi.GPIO as GPIO
 import time
-#因为继电器是低电平触发的，输出低电平的时候继电器吸合。
-Relay_Ch1 = 26
-Relay_Ch2 = 20
-Relay_Ch3 = 21
 
-GPIO.setwarnings(False)
-GPIO.setmode(GPIO.BCM)
+RelayPin = 38   # pin11
 
-GPIO.setup(Relay_Ch1,GPIO.OUT)
-GPIO.setup(Relay_Ch2,GPIO.OUT)
-GPIO.setup(Relay_Ch3,GPIO.OUT)
+def setup():
+        GPIO.setmode(GPIO.BOARD)       # Numbers GPIOs by physical location
+        GPIO.setup(RelayPin, GPIO.OUT)
+        GPIO.output(RelayPin, GPIO.LOW)
 
-print("Setup The Relay Module is [success]")
+def loop():
+        while True:
+                print ('常闭触点通电...')
+                GPIO.output(RelayPin, GPIO.LOW)#低电平时，继电器为初始状态
+                time.sleep(8)                #常闭触点通电，绿灯亮
+def destroy():
+        GPIO.output(RelayPin, GPIO.LOW)
+        time.sleep(0.5)   
+        GPIO.cleanup()                     # Release resource
 
-try:
-	while True:
-		#Control the Channel 1
-		GPIO.output(Relay_Ch1,GPIO.LOW)
-		print("Channel 1:The Common Contact is access to the Normal Open Contact!")
-		time.sleep(0.5)
-	
-		GPIO.output(Relay_Ch1,GPIO.HIGH)
-		print("Channel 1:The Common Contact is access to the Normal Closed Contact!\n")
-		time.sleep(0.5)
+if __name__ == '__main__':     # Program start from here
+        setup()
+        try:
+                loop()
+                # GPIO.output(RelayPin, GPIO.LOW)
 
-		#Control the Channel 2
-		GPIO.output(Relay_Ch2,GPIO.LOW)
-		print("Channel 2:The Common Contact is access to the Normal Open Contact!")
-		time.sleep(0.5)
-		
-		GPIO.output(Relay_Ch2,GPIO.HIGH)
-		print("Channel 2:The Common Contact is access to the Normal Closed Contact!\n")
-		time.sleep(0.5)
-
-		#Control the Channel 3
-		GPIO.output(Relay_Ch3,GPIO.LOW)
-		print("Channel 3:The Common Contact is access to the Normal Open Contact!")
-		time.sleep(0.5)
-		
-		GPIO.output(Relay_Ch3,GPIO.HIGH)
-		print("Channel 3:The Common Contact is access to the Normal Closed Contact!\n")
-		time.sleep(0.5)
-		
-except KeyboardInterrupt:  # When 'Ctrl+C' is pressed, the child program destroy() will be  executed.
-        # GPIO.output(RelayPin, GPIO.LOW)
-        destroy()
-	print("except")
-	GPIO.cleanup()
+        except KeyboardInterrupt:  # When 'Ctrl+C' is pressed, the child program destroy() will be  executed.
+                # GPIO.output(RelayPin, GPIO.LOW)
+                destroy()
