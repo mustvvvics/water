@@ -65,6 +65,9 @@ def gpioDestroy():
     GPIO.output(IN1, False)         
     GPIO.output(IN1, False)         
     GPIO.output(RelayPin, False)
+    GPIO.output(ENB, False) 
+    GPIO.output(IN3, False)           # 将IN3对应的GPIO引脚设置为输出模式
+    GPIO.output(IN4, False)           # 将IN4对应的GPIO引脚设置为输出模式
     GPIO.cleanup()                          # clean GPIO
 
 # Water Function#########################################################
