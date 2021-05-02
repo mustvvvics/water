@@ -23,7 +23,8 @@ errorTemperature = 0
 # Initial Temperature####################################################
 file = "/dev/hidraw0"
 RelayPin = 38                                   # Relay Control
-
+        #
+        
 # Initial Liquid Level###################################################
 RealyHighMax = 13
 CameraHighMax = 364                             # Height mapping
@@ -159,8 +160,7 @@ if __name__ == '__main__':
                                         print(h)
                                         height = CalculationHigh(h)
                                         errorHeight = targetHeight - height
-                        
-                        # clear() #清屏      
+                                        
                         print("目标液位",targetHeight,"目标温度",targetTemperature)
                         print("当前液位",height,"当前温度",temperature)
                         print("误差液位",errorHeight,"误差温度",errorTemperature)
