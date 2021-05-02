@@ -23,7 +23,6 @@ errorTemperature = 0
 # Initial Temperature####################################################
 file = "/dev/hidraw0"
 RelayPin = 38                                   # Relay Control
-        #
         
 # Initial Liquid Level###################################################
 RealyHighMax = 13
@@ -176,12 +175,12 @@ if __name__ == '__main__':
                 cv2.imwrite(filename, img)
                 break 
     except KeyboardInterrupt:
-            print("ancled program.")
+        print("ancled program.")
     except:
-            print("some error.")
-            raise
+        print("some error.")
+        raise
     finally:       
-            print("clean all.")
-            flagWorking = False
-            gpioDestroy()
-            cv2.destroyAllWindows()
+        print("clean all.")
+        flagWorking = False
+        gpioDestroy()
+        cv2.destroyAllWindows()
