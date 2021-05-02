@@ -7,8 +7,8 @@ IN2 = 15                         # 设置GPIO15连接IN2
 
 freq = 500
 speed = 10
-
-errorHeight = 0
+dutyRatio = 0
+errorHeight = 5
 
 def destroy():
         GPIO.output(ENA, False) 
@@ -35,6 +35,7 @@ def releaseWater():#water out
 #                 print("speed",speed)
 #                 time.sleep(1)
 
+# def pidDutyRatio(errorHeight):
 
 
 if __name__ == '__main__':
@@ -47,18 +48,8 @@ if __name__ == '__main__':
 
                 while(True):
                         releaseWater()
-                        pwm.ChangeDutyCycle(100)
-                #         print("errorHeight",errorHeight)
-                #         time.sleep(0.05)
-                #         if errorHeight > 0 :
-                #                 pumpWater()
-                #                 pwm.ChangeDutyCycle(100)
-                #         elif errorHeight < 0 :
-                #                 releaseWater()
-                #                 pwm.ChangeDutyCycle(100)
-                #         elif errorHeight == 0 :
-                #                 waterFlag = 0
-                #                 pwm.ChangeDutyCycle(0)
+                        # pwm.ChangeDutyCycle(dutyRatio)
+                        pwm.ChangeDutyCycle(50)
 
 
         except KeyboardInterrupt:  # When 'Ctrl+C' is pressed, the child program destroy() will be  executed.

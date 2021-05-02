@@ -98,15 +98,12 @@ def relaySetup():
 def controlHeight():
         global errorHeight
 
-        waterGpioIni()                           # 初始化
-        pwm = GPIO.PWM(ENA, freq)           # 设置向ENA输入PWM脉冲信号，频率为freq并创建PWM对象
-        pwm.start(speed)                    # 以speed的初始占空比开始向ENA输入PWM脉冲信号
-        waterFlag = 1
+        waterGpioIni()                        
+        pwm = GPIO.PWM(ENA, freq)               # Set the input PWM pulse signal to ENA, the frequency is freq and create a PWM object
+        pwm.start(speed)                        # Start inputting PWM pulse signal to ENA with the initial duty ratio of speed
         waterDeath = 0.05
+
         while flagWorking:
-                
-                # print("errorHeight",errorHeight)
-                # time.sleep(0.05)
                 if errorHeight >= waterDeath :
                         pumpWater()
                         pwm.ChangeDutyCycle(100)
@@ -114,52 +111,48 @@ def controlHeight():
                         releaseWater()
                         pwm.ChangeDutyCycle(100)
                 elif abs(errorHeight) < waterDeath :
-                        # waterFlag = 0
                         pwm.ChangeDutyCycle(0)
 
-def getTemperature():
+def controlTemperature():
         global temperature
         global errorTemperature
         relaySetup()
         while flagWorking:
-                
-                fp = open(file,'rb')
-
+                # Get Temperature
+                fp = open(file,'rb')            
                 temperature = fp.read(4)
                 temperature = temperature[2:]
-                temperature = int.from_bytes(temperature, byteorder="big") #311
-                temperature /= 10 
-
-                errorTemperature = targetTemperature - temperature #需要提前0.5°
-                if errorTemperature > 0.2:      # Working
+                temperature = int.from_bytes(temperature, byteorder="big") 
+                temperature /= 10               # e.g 301°C to 30.1°C
+                                                #需要提前0.5°C
+                errorTemperature = targetTemperature - temperature 
+                if (errorTemperature - 0.5) > 0.2:      # Working
                         GPIO.output(RelayPin, GPIO.LOW)
-                if errorTemperature <= 0.2:     # Close
+                if (errorTemperature - 0.5) <= 0.2:     # Close
                         GPIO.output(RelayPin, GPIO.HIGH)
 
+# Main Threading#########################################################
 if __name__ == '__main__':
-        t1 = threading.Thread(target = getTemperature)
+        t1 = threading.Thread(target = controlTemperature)
         t2 = threading.Thread(target = controlHeight)
-        # t4 = threading.Thread(target = controlTemperature,args=(targetTemperature,))
-                
+
         t1.start()
         t2.start()
-        # t4.start()
 
         try: 
                 while(1):
-                        # start = time.time()
 
-                        ret,img = cap.read() #实时读取图像
+                        ret,img = cap.read()    #Read the image in real time
                         img = img[ windowsHeight[0] : windowsHeight[1], windowsWidth[0] : windowsWidth[1]]
 
-                        imggray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY) # cv2.cvtColor(src, code[, dst[, dstCn]])
-                        ret, thresh = cv2.threshold(imggray,50,255,0)#简单阈值 黑色识别
-                        _, contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)#用来绘制轮廓
+                        imggray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+                        ret, thresh = cv2.threshold(imggray,50,255,0)
+                        _, contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
                         
                         for cnt in contours:
                                 if (cv2.contourArea(cnt) > 3000) and (cv2.contourArea(cnt) < 52000):
                                         # draw a rectangle around the items
-                                        # clear() #清屏 
+                                        clear() #清屏 
                                         print(cv2.contourArea(cnt))
                                         x,y,w,h = cv2.boundingRect(cnt)
                                         cv2.rectangle(img, (x,y), (x+w,y+h), (0,255,0),3)
@@ -177,18 +170,18 @@ if __name__ == '__main__':
                         k = cv2.waitKey(1)
                         if (k == ord('q')):
                                 break
-                        elif(k == ord('s')):
-                                #name = input('name:')
+                        elif(k == ord('s')):    # Take Photo
                                 name += 1
                                 filename = '/home/pi/sheji/' + str(name) + 'test' + '.jpg'
                                 cv2.imwrite(filename, img)
-                                # print(filename)
-                                #break 
+                                break 
         except KeyboardInterrupt:
                 print("ancled program.")
         except:
+                print("some error.")
                 raise
         finally:       
+                print("clean all.")
                 flagWorking = False
                 gpioDestroy()
                 cv2.destroyAllWindows()
