@@ -1,20 +1,25 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Apr 20 20:22:49 2021
+
+@author: Mustvvvics
+"""
 import time,threading
 from queue import Queue
-
 import cv2
 from clear_screen import clear
-
-import water
-import RPi.GPIO as GPIO         # 引入GPIO模块
-
-
+import RPi.GPIO as GPIO         
+#target#################################################################
 targetHeight = 9
 targetTemperature = 30
+########################################################################
+
+#Initial value##########################################################
 height = 0
 temperature = 0
 errorHeight = 0
 errorTemperature = 0
-
+########################################################################
 file = "/dev/hidraw0"
 # q = Queue()
 ########################################################################
@@ -123,7 +128,7 @@ def getTemperature():
                 temperature = int.from_bytes(temperature, byteorder="big") #311
                 temperature /= 10 
 
-                errorTemperature = targetTemperature - temperature
+                errorTemperature = targetTemperature - temperature #需要提前0.5°
                 if errorTemperature > 0.2:
                         GPIO.output(RelayPin, GPIO.LOW)#低电平时，继电器为初始状态
                 if errorTemperature <= 0.2:
