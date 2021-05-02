@@ -65,9 +65,9 @@ def gpioDestroy():
     GPIO.output(IN1, False)         
     GPIO.output(IN1, False)         
     GPIO.output(RelayPin, False)
-    GPIO.output(ENB, False) 
-    GPIO.output(IN3, False)           # 将IN3对应的GPIO引脚设置为输出模式
-    GPIO.output(IN4, False)           # 将IN4对应的GPIO引脚设置为输出模式
+    # GPIO.output(ENB, False) 
+    # GPIO.output(IN3, False)           # 将IN3对应的GPIO引脚设置为输出模式
+    # GPIO.output(IN4, False)           # 将IN4对应的GPIO引脚设置为输出模式
     GPIO.cleanup()                          # clean GPIO
 
 # Water Function#########################################################
@@ -104,7 +104,7 @@ def controlHeight():
     waterGpioIni()                        
     pwm = GPIO.PWM(ENA, freq)               # Set the input PWM pulse signal to ENA, the frequency is freq and create a PWM object
     pwm.start(speed)                        # Start inputting PWM pulse signal to ENA with the initial duty ratio of speed
-    waterDeath = 0.05
+    waterDeath = 0.08
 
     while flagWorking:
         if errorHeight >= waterDeath :

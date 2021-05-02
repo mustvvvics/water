@@ -49,7 +49,7 @@ if __name__ == '__main__':
         while(True):
             releaseWater()
             # pwm.ChangeDutyCycle(dutyRatio)
-            pwm.ChangeDutyCycle(50)
+            pwm.ChangeDutyCycle(100)
 
 
     except KeyboardInterrupt:  # When 'Ctrl+C' is pressed, the child program destroy() will be  executed.
