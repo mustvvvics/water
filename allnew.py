@@ -9,11 +9,30 @@ from queue import Queue                         # q = Queue()
 import cv2
 from clear_screen import clear
 import RPi.GPIO as GPIO         
+import numpy as np
 
 # target#################################################################
 targetHeight = 9
 targetTemperature = 30
+temperatureFlag = 0                             # 0:heating 1:drop temperature 
 
+# Initial fun pid ########################################################
+Sv = targetTemperature * 10
+Pv = 350
+
+Kp = 1
+T = 500
+Ti = 20
+Td = 0
+pwmcycle = 200
+OUT0 = 0
+Ek_1 = 0
+SEk = 0
+xlist = []
+ylist = []
+changeylist = []
+i = 0
+y = 0
 # Initial Value##########################################################
 height = 0
 temperature = 0
@@ -23,7 +42,14 @@ errorTemperature = 0
 # Initial Temperature####################################################
 file = "/dev/hidraw0"
 RelayPin = 38                                   # Relay Control
-        
+
+# Initial fun############################################################
+funFreq = 10
+funSpeed = 30
+ENB = 11                                        # site GPIO11 link ENB
+IN3 = 29                                        # site GPIO29 link IN3
+IN4 = 13                                        # site GPIO13 link IN4
+
 # Initial Liquid Level###################################################
 RealyHighMax = 13
 CameraHighMax = 364                             # Height mapping
@@ -34,6 +60,7 @@ IN2 = 15                                        # site GPIO15 link IN2
 
 freq = 500                                      # PWM frequency
 speed = 10                                      # PWM Initialising speed
+
 # Initial Camera Value###################################################
 CV_CAP_PROP_FRAME_WIDTH = 3
 CV_CAP_PROP_FRAME_HEIGHT = 4
@@ -65,9 +92,9 @@ def gpioDestroy():
     GPIO.output(IN1, False)         
     GPIO.output(IN1, False)         
     GPIO.output(RelayPin, False)
-    # GPIO.output(ENB, False) 
-    # GPIO.output(IN3, False)           # 将IN3对应的GPIO引脚设置为输出模式
-    # GPIO.output(IN4, False)           # 将IN4对应的GPIO引脚设置为输出模式
+    GPIO.output(ENB, False) 
+    GPIO.output(IN3, False)           
+    GPIO.output(IN4, False)          
     GPIO.cleanup()                          # clean GPIO
 
 # Water Function#########################################################
@@ -95,7 +122,19 @@ def CalculationHigh(h):                         # Calculate the water level
 def relaySetup():
     GPIO.setmode(GPIO.BOARD)                # Numbers GPIOs by physical location
     GPIO.setup(RelayPin, GPIO.OUT)
-    GPIO.output(RelayPin, GPIO.LOW)
+    GPIO.output(RelayPin, GPIO.HIGH)
+
+# fun Function###########################################################
+def funGpioIni():
+    # GPIO.setmode(GPIO.BOARD)              #have set in relay
+    GPIO.setup(ENB, GPIO.OUT)               
+    GPIO.setup(IN3, GPIO.OUT)               
+    GPIO.setup(IN4, GPIO.OUT)                
+
+def funWorking():#
+    GPIO.output(IN3, False)                 
+    GPIO.output(IN4, True)                  
+
 
 # Threading##############################################################
 def controlHeight():
@@ -119,20 +158,69 @@ def controlHeight():
 def controlTemperature():
     global temperature
     global errorTemperature
+    global i,y,Sv,Pv,Kp,T,Ti,Td,pwmcycle,OUT0,Ek_1,SEk,xlist,ylist,changeylist
     relaySetup()
+    funGpioIni()                            
+    pwmfun = GPIO.PWM(ENB, funFreq)         
+                     
     while flagWorking:
         # Get Temperature
         fp = open(file,'rb')            
         temperature = fp.read(4)
         temperature = temperature[2:]
         temperature = int.from_bytes(temperature, byteorder="big") 
-        temperature /= 10               # e.g 301°C to 30.1°C
-                                        #需要提前0.5°C
+        funTemperature = temperature
+        temperature /= 10                   # e.g 301°C to 30.1°C
+        # Heating to 30 needs to be advanced 0.5°C, heating to 35 needs to be advanced 0°C
         errorTemperature = targetTemperature - temperature 
-        if (errorTemperature - 0.5) > 0.2:      # Working
+
+        advancedTemperature = 0.5
+        if temperatureFlag == 0:            #Heating
+            if (errorTemperature - advancedTemperature) > 0.2:      # Working
                 GPIO.output(RelayPin, GPIO.LOW)
-        if (errorTemperature - 0.5) <= 0.2:     # Close
+            if (errorTemperature - advancedTemperature) <= 0.2:     # Close
                 GPIO.output(RelayPin, GPIO.HIGH)
+        elif temperatureFlag == 1:
+            pwmfun.start(funSpeed) 
+            funWorking()
+
+            i += 1
+            xlist.append(i)
+            y += 1
+            Ek = Sv - Pv
+            Pout = Ek * Kp/10
+            SEk += Ek
+            delEk = Ek - Ek_1
+            Iout = SEk / (Ti*10)
+            Dout = Td * delEk/10
+            out = Pout + Iout + Dout + OUT0
+            Ek_1 = Ek
+            if y == 100:                    # sampling time：100 = 300ms  10000 cost 33s    
+                y = 0 
+                Pv = funTemperature
+            ylist.append((-out + 500))  
+            yappend = int(((-out + 500)/ 10) - 20)
+            
+            if yappend > 30:
+                yappend = 30
+            if yappend < 0:
+                yappend = 0
+            clear()
+            print("yappend",yappend) 
+            print("temperature",funTemperature) 
+            pwmfun.ChangeDutyCycle(yappend)     
+            changeylist.append(yappend) 
+            if temperature == Sv:
+                # plt.show()
+                flag = 0
+                Ek = 0
+                Ek_1 = 0
+                Pout = 0
+                SEk =0
+                delEk = 0
+                Iout = 0
+                Dout = 0
+                i = 0
 
 # Main Threading#########################################################
 if __name__ == '__main__':
@@ -145,7 +233,7 @@ if __name__ == '__main__':
     try: 
         while(1):
 
-            ret,img = cap.read()    #Read the image in real time
+            ret,img = cap.read()        #Read the image in real time
             img = img[ windowsHeight[0] : windowsHeight[1], windowsWidth[0] : windowsWidth[1]]
 
             imggray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
@@ -155,7 +243,7 @@ if __name__ == '__main__':
             for cnt in contours:
                 if (cv2.contourArea(cnt) > 3000) and (cv2.contourArea(cnt) < 52000):
                     # draw a rectangle around the items
-                    clear() #清屏 
+                    # clear() #清屏 
                     print(cv2.contourArea(cnt))
                     x,y,w,h = cv2.boundingRect(cnt)
                     cv2.rectangle(img, (x,y), (x+w,y+h), (0,255,0),3)
@@ -172,7 +260,7 @@ if __name__ == '__main__':
             k = cv2.waitKey(1)
             if (k == ord('q')):
                 break
-            elif(k == ord('s')):    # Take Photo
+            elif(k == ord('s')):        # Take Photo
                 name += 1
                 filename = '/home/pi/sheji/' + str(name) + 'test' + '.jpg'
                 cv2.imwrite(filename, img)

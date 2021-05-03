@@ -1,12 +1,14 @@
 
 import RPi.GPIO as GPIO         # 引入GPIO模块
 import time,threading                    # 引入time模块
-# from matplotlib import pyplot as plt
-# import numpy as np
+from matplotlib import pyplot as plt
+import numpy as np
+from clear_screen import clear
 # from scipy.interpolate import make_interp_spline
 file = "/dev/hidraw0"
+
 funFreq = 10
-funSpeed = 1
+funSpeed = 1.0
 temperature = 0
 
 ENB = 11                                        # site GPIO35 link ENB
@@ -50,7 +52,8 @@ def funWorking():#
     GPIO.output(IN4, True)          # 将IN4设置为1
 
 Sv = 250
-Pv = 300
+
+Pv = 350
 
 Kp = 1
 T = 500
@@ -93,7 +96,7 @@ if __name__ == '__main__':
 
     try :
         funGpioIni()                           # 初始化
-        pwm = GPIO.PWM(ENB, funFreq)           # 设置向ENB输入PWM脉冲信号，频率为freq并创建PWM对象
+        pwmfun = GPIO.PWM(ENB, funFreq)           # 设置向ENB输入PWM脉冲信号，频率为freq并创建PWM对象
         pwm.start(funSpeed)                    # 以speed的初始占空比开始向ENB输入PWM脉冲信号
 
         while(True):
@@ -111,17 +114,26 @@ if __name__ == '__main__':
             Dout = Td * delEk/10
             out = Pout + Iout + Dout + OUT0
             Ek_1 = Ek
-            if y == 20: #100 = 300ms# 10000 cost 33s   // each 0.0033s 
+            if y == 300: #100 = 300ms# 10000 cost 33s   // each 0.0033s 
                 y = 0 
                 Pv = temperature
             ylist.append((-out + 500))  
-            yappend = (-out + 500)/ 10 - 20
-            pwm.ChangeDutyCycle(int(yappend))
+            yappend = float(int(((-out + 500)/ 10) - 20))
+            
+            # 
+            if yappend > 30.0:
+                yappend = 30.0
+            if yappend < 0.0:
+                yappend = 0.0
+            clear()
+            print("yappend",yappend) 
+            print("temperature",temperature) 
+            pwmfun.ChangeDutyCycle(yappend)
             changeylist.append(yappend) 
-            if i == xmax:
+            if temperature == Sv:
                 # end = time.time()
                 # print("time",end - start)
-                plt.show()
+                # plt.show()
                 flag = 0
                 Ek = 0
                 Ek_1 = 0
