@@ -205,9 +205,9 @@ def controlTemperature():
                 yappend = 30
             if yappend < 0:
                 yappend = 0
-            clear()
-            print("yappend",yappend) 
-            print("temperature",funTemperature) 
+            # clear()
+            # print("yappend",yappend) 
+            # print("temperature",funTemperature) 
             pwmfun.ChangeDutyCycle(yappend)     
             changeylist.append(yappend) 
             if temperature == Sv:
@@ -243,7 +243,7 @@ if __name__ == '__main__':
             for cnt in contours:
                 if (cv2.contourArea(cnt) > 3000) and (cv2.contourArea(cnt) < 52000):
                     # draw a rectangle around the items
-                    # clear() #清屏 
+                    clear() #清屏 
                     print(cv2.contourArea(cnt))
                     x,y,w,h = cv2.boundingRect(cnt)
                     cv2.rectangle(img, (x,y), (x+w,y+h), (0,255,0),3)
