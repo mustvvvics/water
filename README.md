@@ -1,6 +1,4 @@
-# ras-water
-
-## 液位水温控制系统
+# 液位水温控制系统
 
 
 ENB = 11                                        # site GPIO11 link ENB
