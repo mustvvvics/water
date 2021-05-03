@@ -47,8 +47,8 @@ if __name__ == '__main__':
         waterFlag = 1
 
         while(True):
-            # releaseWater()
-            pumpWater()
+            releaseWater()
+            # pumpWater()
             # pwm.ChangeDutyCycle(dutyRatio)
             pwm.ChangeDutyCycle(100)
 
