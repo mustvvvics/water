@@ -5,11 +5,18 @@ Created on Tue Apr 20 20:22:49 2021
 @author: Mustvvvics
 """
 import time,threading
+from time import sleep
 from queue import Queue                         # q = Queue()
 import cv2
 from clear_screen import clear
 import RPi.GPIO as GPIO         
 import numpy as np
+
+import socket
+from tcpclient import sendData
+from tcpcommon import device, bufferSize, printT, getJson
+import requests as r
+
 
 # target#################################################################
 targetHeight = 9
@@ -222,13 +229,91 @@ def controlTemperature():
                 Dout = 0
                 i = 0
 
+def controlProcess():
+    pass
+
+def dealTcpData(jsonData):
+    global targetHeight
+    global targetTemperature
+
+    command = jsonData['data']
+    print(command)
+    if (command == "higher"):
+        targetHeight += 2
+    elif (command == "lower"):
+        targetHeight -= 2
+    elif (command == "hotter"):
+        targetTemperature += 1
+    elif (command == "cooler"):
+        targetTemperature -= 1
+    else:
+        return "command error"
+    return "con ok"
+
+def tcpServer():
+    # server main below
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serversocket:
+        serversocket.bind(device['ras'])
+        serversocket.settimeout(3.0)
+        serversocket.listen(5)  # max listen num: only listen one connection to avoid data seperation
+
+        printT(f"Listening to {device['ras']}.")
+        while flagWorking:
+            try:
+                try:
+                    clientsocket, addr = serversocket.accept()
+                except socket.timeout:
+                    continue
+                printT(f"Client addr: {addr}")
+
+                jsonData = getJson(clientsocket)
+                reply = dealTcpData(jsonData)
+                if reply is None:
+                    reply = "200 ok"
+
+                printT("Ending connection.")
+                clientsocket.send(reply.encode('utf-8'))
+                clientsocket.close()
+                print()
+                printT(f"Listening to {device['ras']}.")
+
+            except socket.timeout:
+                printT("Error: Connection timeout.")
+            except KeyboardInterrupt:
+                printT("Server terminated by user.")
+                break
+
+def makeUpdate():
+    url = 'https://taobooooo.top/waterlu'
+    # t -- temperature, l - water height, dt -- target temperature, dl -- target water height
+    while flagWorking:
+        time.sleep(1)
+        msg = {
+            'mode': 'u',
+            't': temperature,
+            'l': round(height, 1),
+            'dt': targetTemperature,
+            'dl': targetHeight,
+        }
+        try:
+            echo = r.post(url, data = msg)
+        except ConnectionRefusedError:
+            return 'ras error'
+
+
 # Main Threading#########################################################
 if __name__ == '__main__':
     t1 = threading.Thread(target = controlTemperature)
     t2 = threading.Thread(target = controlHeight)
 
+    tServer = threading.Thread(target = tcpServer)
+    tUpdate = threading.Thread(target = makeUpdate)
+
     t1.start()
     t2.start()
+
+    tServer.start()
+    tUpdate.start()
 
     try: 
         while(1):
@@ -251,13 +336,13 @@ if __name__ == '__main__':
                     height = CalculationHigh(h)
                     errorHeight = targetHeight - height
                             
-            print("目标液位",targetHeight,"目标温度",targetTemperature)
-            print("当前液位",height,"当前温度",temperature)
-            print("误差液位",errorHeight,"误差温度",errorTemperature)
+            print("目标液位",targetHeight,"\t目标温度",targetTemperature)
+            print("当前液位",round(height, 2), "\t当前温度",temperature)
+            print("误差液位",round(errorHeight, 2),"\t误差温度",round(errorTemperature, 2))
 
             cv2.imshow("-1", img)
             
-            k = cv2.waitKey(1)
+            k = cv2.waitKey(20)
             if (k == ord('q')):
                 break
             elif(k == ord('s')):        # Take Photo
