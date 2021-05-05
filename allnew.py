@@ -7,7 +7,7 @@ Created on Tue Apr 20 20:22:49 2021
 import time,threading
 from multiprocessing import Process, Value
 from time import sleep
-from queue import Queue                         # q = Queue()
+from queue import Queue                               
 import cv2
 from clear_screen import clear
 import RPi.GPIO as GPIO         
@@ -18,11 +18,9 @@ from tcpclient import sendData
 from tcpcommon import device, bufferSize, printT, getJson
 import requests as r
 
-
 # target#################################################################
 targetHeight = Value('f', 9)
-targetTemperature = Value('f', 30)
-temperatureFlag = 0                             # 0:heating 1:drop temperature 
+targetTemperature = Value('f', 30) 
 
 # Initial fun pid ########################################################
 Sv = targetTemperature.value * 10
@@ -41,6 +39,7 @@ ylist = []
 changeylist = []
 i = 0
 y = 0
+
 # Initial Value##########################################################
 height = Value('f', 0)
 temperature = Value('f', 0)
@@ -71,6 +70,7 @@ speed = 10                                      # PWM Initialising speed
 
 # Flag###################################################################
 flagWorking = True
+temperatureFlag = 0                             # 0:heating 1:drop temperature
 
 # Gpio Destroy###########################################################
 def gpioDestroy():
@@ -81,18 +81,18 @@ def gpioDestroy():
     GPIO.output(ENB, False) 
     GPIO.output(IN3, False)           
     GPIO.output(IN4, False)          
-    GPIO.cleanup()                          # clean GPIO
+    GPIO.cleanup()                              # clean GPIO
 
 # Water Function#########################################################
 def waterGpioIni():
-    GPIO.setmode(GPIO.BOARD)                # 使用BOARD编号方式
-    GPIO.setup(ENA, GPIO.OUT)               # Set the GPIO pin corresponding to ENA to output mode
-    GPIO.setup(IN1, GPIO.OUT)               # Set the GPIO pin corresponding to IN1 to output mode
-    GPIO.setup(IN2, GPIO.OUT)               # Set the GPIO pin corresponding to IN2 to output mode
+    GPIO.setmode(GPIO.BOARD)                    # use BOARD
+    GPIO.setup(ENA, GPIO.OUT)                   # Set the GPIO pin corresponding to ENA to output mode
+    GPIO.setup(IN1, GPIO.OUT)                   # Set the GPIO pin corresponding to IN1 to output mode
+    GPIO.setup(IN2, GPIO.OUT)                   # Set the GPIO pin corresponding to IN2 to output mode
 
 def pumpWater():                                # water in
-    GPIO.output(IN1, False)                 # Set IN1 to 0
-    GPIO.output(IN2, True)                  # Set IN2 to 1
+    GPIO.output(IN1, False)                     # Set IN1 to 0
+    GPIO.output(IN2, True)                      # Set IN2 to 1
 
 def releaseWater():                             # water out
     GPIO.output(IN1, True)         
@@ -104,15 +104,16 @@ def CalculationHigh(h):                         # Calculate the water level
     else:
         high = 0
     return high
+
 # relay Function#########################################################
 def relaySetup():
-    GPIO.setmode(GPIO.BOARD)                # Numbers GPIOs by physical location
+    GPIO.setmode(GPIO.BOARD)                    # Numbers GPIOs by physical location
     GPIO.setup(RelayPin, GPIO.OUT)
     GPIO.output(RelayPin, GPIO.HIGH)
 
 # fun Function###########################################################
 def funGpioIni():
-    # GPIO.setmode(GPIO.BOARD)              #have set in relay
+    # GPIO.setmode(GPIO.BOARD)                  #have set in relay
     GPIO.setup(ENB, GPIO.OUT)               
     GPIO.setup(IN3, GPIO.OUT)               
     GPIO.setup(IN4, GPIO.OUT)                
@@ -121,14 +122,13 @@ def funWorking():#
     GPIO.output(IN3, False)                 
     GPIO.output(IN4, True)                  
 
-
 # Threading##############################################################
 def controlHeight():
     global errorHeight
 
     waterGpioIni()                        
-    pwm = GPIO.PWM(ENA, freq)               # Set the input PWM pulse signal to ENA, the frequency is freq and create a PWM object
-    pwm.start(speed)                        # Start inputting PWM pulse signal to ENA with the initial duty ratio of speed
+    pwm = GPIO.PWM(ENA, freq)                   # Set the input PWM pulse signal to ENA, the frequency is freq and create a PWM object
+    pwm.start(speed)                            # Start inputting PWM pulse signal to ENA with the initial duty ratio of speed
     waterDeath = 0.08
 
     while flagWorking:
@@ -154,12 +154,17 @@ def controlTemperature():
         fp = open(file,'rb')            
         temperature.value = int.from_bytes(fp.read(4)[2:], byteorder='big')
         funTemperature = temperature.value
-        temperature.value /= 10                   # e.g 301°C to 30.1°C
-        # Heating to 30 needs to be advanced 0.5°C, heating to 35 needs to be advanced 0°C
-        errorTemperature.value = targetTemperature.value - temperature.value 
-
+        temperature.value /= 10                 # e.g 301°C to 30.1°C
+        errorTemperature.value = targetTemperature.value - temperature.value
+        # Heating to 30 needs to be advanced 0.5°C, heating to 35 needs to be advanced 0°C 
         advancedTemperature = 0.5
-        if temperatureFlag == 0:            #Heating
+
+        if errorTemperature.value >= 0:
+            temperatureFlag = 0
+        elif errorTemperature.value < 0:
+            temperatureFlag = 1
+
+        if temperatureFlag == 0:                # Heating
             if (errorTemperature.value - advancedTemperature) > 0.2:      # Working
                 GPIO.output(RelayPin, GPIO.LOW)
             if (errorTemperature.value - advancedTemperature) <= 0.2:     # Close
@@ -179,7 +184,7 @@ def controlTemperature():
             Dout = Td * delEk/10
             out = Pout + Iout + Dout + OUT0
             Ek_1 = Ek
-            if y == 100:                    # sampling time：100 = 300ms  10000 cost 33s    
+            if y == 100:                        # sampling time：100 = 300ms  10000 cost 33s    
                 y = 0 
                 Pv = funTemperature
             ylist.append((-out + 500))  
@@ -206,8 +211,9 @@ def controlTemperature():
                 Dout = 0
                 i = 0
 
+# Process################################################################
 def cameraProcess(height, errorHeight, targetHeight):
-    # Initial Camera Value###################################################
+    # Initial Camera Value
     CV_CAP_PROP_FRAME_WIDTH = 3
     CV_CAP_PROP_FRAME_HEIGHT = 4
     CV_CAP_PROP_FPS = 5
@@ -221,7 +227,7 @@ def cameraProcess(height, errorHeight, targetHeight):
     frameWidth = 640
     frameHeight = 480
 
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, frameWidth)   # Setup form 1920 * 1080 
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, frameWidth)   
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, frameHeight)
 
     ratioWindowsHeight = 1                          # Form transformation
@@ -230,23 +236,25 @@ def cameraProcess(height, errorHeight, targetHeight):
     windowsHeight = int(frameHeight * ( 0.5 - ratioWindowsHeight / 2 )), int(frameHeight * ( 0.5 + ratioWindowsHeight / 2 ))
 
     while True:
-        ret,img = cap.read()        #Read the image in real time
+        ret,img = cap.read()                        #Read the image in real time
         img = img[ windowsHeight[0] : windowsHeight[1], windowsWidth[0] : windowsWidth[1]]
 
         imggray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
         ret, thresh = cv2.threshold(imggray,50,255,0)
         _, contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
         
+        heightTemp = 0
         for cnt in contours:
             if (cv2.contourArea(cnt) > 3000) and (cv2.contourArea(cnt) < 52000):
                 # draw a rectangle around the items
-                clear() #清屏 
+                clear()                             #clear 
                 print(cv2.contourArea(cnt))
                 x,y,w,h = cv2.boundingRect(cnt)
                 cv2.rectangle(img, (x,y), (x+w,y+h), (0,255,0),3)
                 print("height", h)
-                height.value = CalculationHigh(h)
-                errorHeight.value = targetHeight.value - height.value
+                heightTemp = CalculationHigh(h)
+        height.value = heightTemp
+        errorHeight.value = targetHeight.value - height.value
 
         print("目标液位",targetHeight.value,"\t目标温度",targetTemperature.value)
         print("当前液位",round(height.value, 2), "\t当前温度",round(temperature.value, 1))
@@ -257,13 +265,14 @@ def cameraProcess(height, errorHeight, targetHeight):
         k = cv2.waitKey(1)
         if (k == ord('q')):
             break
-        elif(k == ord('s')):        # Take Photo
+        elif(k == ord('s')):                        # Take Photo
             name += 1
             filename = '/home/pi/sheji/' + str(name) + 'test' + '.jpg'
             cv2.imwrite(filename, img)
             break 
     cv2.destroyAllWindows()
 
+# deal Tcp Fuction#######################################################
 def dealTcpData(jsonData):
     global targetHeight
     global targetTemperature
@@ -287,8 +296,8 @@ def tcpServer():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as serversocket:
         serversocket.bind(device['ras'])
         serversocket.settimeout(3.0)
-        serversocket.listen(5)  # max listen num: only listen one connection to avoid data seperation
-
+        serversocket.listen(5)  
+        # max listen num: only listen one connection to avoid data seperation
         printT(f"Listening to {device['ras']}.")
         while flagWorking:
             try:
@@ -331,7 +340,6 @@ def makeUpdate():
             echo = r.post(url, data = msg)
         except ConnectionRefusedError:
             return 'ras error'
-
 
 # Main Threading#########################################################
 if __name__ == '__main__':
