@@ -19,7 +19,7 @@ from tcpcommon import device, bufferSize, printT, getJson
 import requests as r
 
 # target#################################################################
-targetHeight = Value('f', 9)
+targetHeight = Value('f', 11)
 targetTemperature = Value('f', 30) 
 
 # Initial fun pid ########################################################
@@ -159,9 +159,9 @@ def controlTemperature():
         # Heating to 30 needs to be advanced 0.5°C, heating to 35 needs to be advanced 0°C 
         advancedTemperature = 0.5
 
-        if errorTemperature.value >= 0:
+        if errorTemperature.value >= -0.3:
             temperatureFlag = 0
-        elif errorTemperature.value < 0:
+        elif errorTemperature.value < -0.3:
             temperatureFlag = 1
 
         if temperatureFlag == 0:                # Heating
@@ -200,6 +200,7 @@ def controlTemperature():
             pwmfun.ChangeDutyCycle(yappend)     
             changeylist.append(yappend) 
             if temperature.value == Sv:
+                changeylist.append(0) 
                 # plt.show()
                 flag = 0
                 Ek = 0
@@ -328,7 +329,7 @@ def makeUpdate():
     url = 'https://taobooooo.top/waterlu'
     # t -- temperature, l - water height, dt -- target temperature, dl -- target water height
     while flagWorking:
-        time.sleep(1)
+        time.sleep(0.5)
         msg = {
             'mode': 'u',
             't': round(temperature.value, 1),
