@@ -19,8 +19,8 @@ from tcpcommon import device, bufferSize, printT, getJson
 import requests as r
 
 # target#################################################################
-targetHeight = Value('f', 11)
-targetTemperature = Value('f', 30) 
+targetHeight = Value('f', 9)
+targetTemperature = Value('f', 27) 
 
 # Initial fun pid ########################################################
 Sv = targetTemperature.value * 10
@@ -58,8 +58,8 @@ IN3 = 29                                        # site GPIO29 link IN3
 IN4 = 13                                        # site GPIO13 link IN4
 
 # Initial Liquid Level###################################################
-RealyHighMax = 13
-CameraHighMax = 364                             # Height mapping
+RealyHighMax = 12.5
+CameraHighMax = 376                             # Height mapping
 
 ENA = 35                                        # site GPIO35 link ENA
 IN1 = 31                                        # site GPIO31 link IN1
@@ -121,6 +121,10 @@ def funGpioIni():
 def funWorking():#
     GPIO.output(IN3, False)                 
     GPIO.output(IN4, True)                  
+
+def funStop():#
+    GPIO.output(IN3, False)        
+    GPIO.output(IN4, False)          
 
 # Threading##############################################################
 def controlHeight():
@@ -199,8 +203,12 @@ def controlTemperature():
             # print("temperature",funTemperature) 
             pwmfun.ChangeDutyCycle(yappend)     
             changeylist.append(yappend) 
-            if temperature.value == Sv:
-                changeylist.append(0) 
+            print("sadasdasdfoihaspdioufhpoiasdhfopiasdhgo;",errorTemperature.value)
+            if errorTemperature.value >= -0.2:
+                print("asd;oughasdiopugaspdiough")
+                pwmfun.stop()
+                funStop() 
+                temperatureFlag = 0
                 # plt.show()
                 flag = 0
                 Ek = 0
@@ -246,9 +254,9 @@ def cameraProcess(height, errorHeight, targetHeight):
         
         heightTemp = 0
         for cnt in contours:
-            if (cv2.contourArea(cnt) > 3000) and (cv2.contourArea(cnt) < 52000):
+            if (cv2.contourArea(cnt) > 3000) and (cv2.contourArea(cnt) < 53000):
                 # draw a rectangle around the items
-                clear()                             #clear 
+                # clear()                             #clear 
                 print(cv2.contourArea(cnt))
                 x,y,w,h = cv2.boundingRect(cnt)
                 cv2.rectangle(img, (x,y), (x+w,y+h), (0,255,0),3)

@@ -131,6 +131,7 @@ if __name__ == '__main__':
             pwmfun.ChangeDutyCycle(yappend)
             changeylist.append(yappend) 
             if temperature == Sv:
+                pwm.stop() 
                 # end = time.time()
                 # print("time",end - start)
                 # plt.show()
