@@ -20,7 +20,7 @@ import requests as r
 
 # target#################################################################
 targetHeight = Value('f', 9)
-targetTemperature = Value('f', 27) 
+targetTemperature = Value('f', 30) 
 
 # Initial fun pid ########################################################
 Sv = targetTemperature.value * 10
@@ -34,9 +34,9 @@ pwmcycle = 200
 OUT0 = 0
 Ek_1 = 0
 SEk = 0
-xlist = []
-ylist = []
-changeylist = []
+# xlist = []
+# ylist = []
+# changeylist = []
 i = 0
 y = 0
 
@@ -168,17 +168,20 @@ def controlTemperature():
         elif errorTemperature.value < -0.3:
             temperatureFlag = 1
 
-        if temperatureFlag == 0:                # Heating
+        if temperatureFlag == 0: # Heating
+            pwmfun.stop()# Close
+            funStop()# Close                
             if (errorTemperature.value - advancedTemperature) > 0.2:      # Working
                 GPIO.output(RelayPin, GPIO.LOW)
             if (errorTemperature.value - advancedTemperature) <= 0.2:     # Close
                 GPIO.output(RelayPin, GPIO.HIGH)
         elif temperatureFlag == 1:
+            GPIO.output(RelayPin, GPIO.HIGH)# Close
             pwmfun.start(funSpeed) 
             funWorking()
 
             i += 1
-            xlist.append(i)
+            # xlist.append(i)
             y += 1
             Ek = Sv - Pv
             Pout = Ek * Kp/10
@@ -202,10 +205,8 @@ def controlTemperature():
             # print("yappend",yappend) 
             # print("temperature",funTemperature) 
             pwmfun.ChangeDutyCycle(yappend)     
-            changeylist.append(yappend) 
-            print("sadasdasdfoihaspdioufhpoiasdhfopiasdhgo;",errorTemperature.value)
+            # changeylist.append(yappend) 
             if errorTemperature.value >= -0.2:
-                print("asd;oughasdiopugaspdiough")
                 pwmfun.stop()
                 funStop() 
                 temperatureFlag = 0
