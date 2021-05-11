@@ -22,7 +22,7 @@ import requests as r
 targetHeight = Value('f', 8)
 targetTemperature = Value('f', 25) 
 
-# Initial fun pid ########################################################
+# Initial fan pid ########################################################
 Sv = targetTemperature.value * 10
 Pv = 350
 
@@ -50,9 +50,9 @@ errorTemperature = Value('f', 0)
 file = "/dev/hidraw0"
 RelayPin = 38                                   # Relay Control
 
-# Initial fun############################################################
-funFreq = 10
-funSpeed = 30
+# Initial fan############################################################
+fanFreq = 10
+fanSpeed = 30
 ENB = 11                                        # site GPIO11 link ENB
 IN3 = 29                                        # site GPIO29 link IN3
 IN4 = 13                                        # site GPIO13 link IN4
@@ -83,7 +83,7 @@ def gpioDestroy():
     GPIO.output(IN4, False)          
     GPIO.cleanup()                              # clean GPIO
 
-# Water Function#########################################################
+# Water fanction#########################################################
 def waterGpioIni():
     GPIO.setmode(GPIO.BOARD)                    # use BOARD
     GPIO.setup(ENA, GPIO.OUT)                   # Set the GPIO pin corresponding to ENA to output mode
@@ -105,24 +105,24 @@ def CalculationHigh(h):                         # Calculate the water level
         high = 0
     return high
 
-# relay Function#########################################################
+# relay fanction#########################################################
 def relaySetup():
     GPIO.setmode(GPIO.BOARD)                    # Numbers GPIOs by physical location
     GPIO.setup(RelayPin, GPIO.OUT)
     GPIO.output(RelayPin, GPIO.HIGH)
 
-# fun Function###########################################################
-def funGpioIni():
+# fan fanction###########################################################
+def fanGpioIni():
     # GPIO.setmode(GPIO.BOARD)                  #have set in relay
     GPIO.setup(ENB, GPIO.OUT)               
     GPIO.setup(IN3, GPIO.OUT)               
     GPIO.setup(IN4, GPIO.OUT)                
 
-def funWorking():#
+def fanWorking():#
     GPIO.output(IN3, False)                 
     GPIO.output(IN4, True)                  
 
-def funStop():#
+def fanStop():#
     GPIO.output(IN3, False)        
     GPIO.output(IN4, False)          
 
@@ -150,14 +150,14 @@ def controlTemperature():
     global errorTemperature
     global i,y,Sv,Pv,Kp,T,Ti,Td,pwmcycle,OUT0,Ek_1,SEk,xlist,ylist,changeylist
     relaySetup()
-    funGpioIni()                            
-    pwmfun = GPIO.PWM(ENB, funFreq)         
+    fanGpioIni()                            
+    pwmfan = GPIO.PWM(ENB, fanFreq)         
                      
     while flagWorking:
         # Get Temperature
         fp = open(file,'rb')            
         temperature.value = int.from_bytes(fp.read(4)[2:], byteorder='big')
-        funTemperature = temperature.value
+        fanTemperature = temperature.value
         temperature.value /= 10                 # e.g 301°C to 30.1°C
         errorTemperature.value = targetTemperature.value - temperature.value
         # Heating to 30 needs to be advanced 0.5°C, heating to 35 needs to be advanced 0°C 
@@ -169,8 +169,8 @@ def controlTemperature():
             temperatureFlag = 1
 
         if temperatureFlag == 0: # Heating
-            pwmfun.stop()# Close
-            funStop()# Close                
+            pwmfan.stop()# Close
+            fanStop()# Close                
             if (errorTemperature.value - advancedTemperature) > 0.2:      # Working
                 GPIO.output(RelayPin, GPIO.LOW)
             if (errorTemperature.value - advancedTemperature) <= 0.2:     # Close
@@ -178,8 +178,8 @@ def controlTemperature():
                 
         elif temperatureFlag == 1:
             GPIO.output(RelayPin, GPIO.HIGH)# Close
-            pwmfun.start(funSpeed) 
-            funWorking()
+            pwmfan.start(fanSpeed) 
+            fanWorking()
 
             i += 1
             # xlist.append(i)
@@ -194,7 +194,7 @@ def controlTemperature():
             Ek_1 = Ek
             if y == 100:                        # sampling time：100 = 300ms  10000 cost 33s    
                 y = 0 
-                Pv = funTemperature
+                Pv = fanTemperature
             # ylist.append((-out + 500))  
             yappend = int(((-out + 500)/ 10) - 20)
             
@@ -204,12 +204,12 @@ def controlTemperature():
                 yappend = 0
             # clear()
             # print("yappend",yappend) 
-            # print("temperature",funTemperature) 
-            pwmfun.ChangeDutyCycle(yappend)     
+            # print("temperature",fanTemperature) 
+            pwmfan.ChangeDutyCycle(yappend)     
             # changeylist.append(yappend) 
             if errorTemperature.value >= -0.2:
-                pwmfun.stop()
-                funStop() 
+                pwmfan.stop()
+                fanStop() 
                 # temperatureFlag = 0
                 # plt.show()
                 flag = 0
