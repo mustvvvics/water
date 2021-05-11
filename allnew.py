@@ -19,8 +19,8 @@ from tcpcommon import device, bufferSize, printT, getJson
 import requests as r
 
 # target#################################################################
-targetHeight = Value('f', 9)
-targetTemperature = Value('f', 30) 
+targetHeight = Value('f', 8)
+targetTemperature = Value('f', 25) 
 
 # Initial fun pid ########################################################
 Sv = targetTemperature.value * 10
@@ -161,7 +161,7 @@ def controlTemperature():
         temperature.value /= 10                 # e.g 301°C to 30.1°C
         errorTemperature.value = targetTemperature.value - temperature.value
         # Heating to 30 needs to be advanced 0.5°C, heating to 35 needs to be advanced 0°C 
-        advancedTemperature = 0.5
+        advancedTemperature = 0.2
 
         if errorTemperature.value >= -0.3:
             temperatureFlag = 0
@@ -175,6 +175,7 @@ def controlTemperature():
                 GPIO.output(RelayPin, GPIO.LOW)
             if (errorTemperature.value - advancedTemperature) <= 0.2:     # Close
                 GPIO.output(RelayPin, GPIO.HIGH)
+                
         elif temperatureFlag == 1:
             GPIO.output(RelayPin, GPIO.HIGH)# Close
             pwmfun.start(funSpeed) 
@@ -194,7 +195,7 @@ def controlTemperature():
             if y == 100:                        # sampling time：100 = 300ms  10000 cost 33s    
                 y = 0 
                 Pv = funTemperature
-            ylist.append((-out + 500))  
+            # ylist.append((-out + 500))  
             yappend = int(((-out + 500)/ 10) - 20)
             
             if yappend > 30:
@@ -209,7 +210,7 @@ def controlTemperature():
             if errorTemperature.value >= -0.2:
                 pwmfun.stop()
                 funStop() 
-                temperatureFlag = 0
+                # temperatureFlag = 0
                 # plt.show()
                 flag = 0
                 Ek = 0
@@ -257,7 +258,7 @@ def cameraProcess(height, errorHeight, targetHeight):
         for cnt in contours:
             if (cv2.contourArea(cnt) > 3000) and (cv2.contourArea(cnt) < 53000):
                 # draw a rectangle around the items
-                # clear()                             #clear 
+                clear()                             #clear 
                 print(cv2.contourArea(cnt))
                 x,y,w,h = cv2.boundingRect(cnt)
                 cv2.rectangle(img, (x,y), (x+w,y+h), (0,255,0),3)

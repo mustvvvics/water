@@ -19,8 +19,8 @@ CV_CAP_PROP_FPS = 5
 CV_CAP_PROP_FOURCC = 6
 
 
-RealyHighMax = 13
-CameraHighMax = 321
+RealyHighMax = 12.5
+CameraHighMax = 376
 
 name = 0
 cap = cv2.VideoCapture(name) #打开内置摄像头

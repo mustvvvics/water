@@ -97,7 +97,7 @@ if __name__ == '__main__':
     try :
         funGpioIni()                           # 初始化
         pwmfun = GPIO.PWM(ENB, funFreq)           # 设置向ENB输入PWM脉冲信号，频率为freq并创建PWM对象
-        pwm.start(funSpeed)                    # 以speed的初始占空比开始向ENB输入PWM脉冲信号
+        pwmfun.start(funSpeed)                    # 以speed的初始占空比开始向ENB输入PWM脉冲信号
 
         while(True):
             funWorking()
@@ -131,7 +131,7 @@ if __name__ == '__main__':
             pwmfun.ChangeDutyCycle(yappend)
             changeylist.append(yappend) 
             if temperature == Sv:
-                pwm.stop() 
+                pwmfun.stop() 
                 # end = time.time()
                 # print("time",end - start)
                 # plt.show()
