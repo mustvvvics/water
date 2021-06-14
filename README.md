@@ -7,6 +7,7 @@
 test文件放置各部分的测试程序
 
 last文件放置温度传感器的C程序
+![image](https://user-images.githubusercontent.com/75075647/121836262-ae6f6a80-cd05-11eb-86f4-19841a61b0a5.png)
 
 ## 运行说明
 
